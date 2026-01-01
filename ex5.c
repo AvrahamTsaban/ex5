@@ -426,6 +426,7 @@ void deleteEpisode() {
 **************/
 
 void printArray() {
+    // print database as a 2D array
     for (int r = 0; r < dbSize; ++r) {
         for (int c = 0; c < dbSize; ++c) {
             printf("[%s] ", database[c][r] ? database[c][r]->name : "NULL");
@@ -516,6 +517,7 @@ void printEpisode() {
 /***Memory**/
 
 void *safeRealloc(void *ptr, size_t newSize) {
+    // reallocate memory and exit program if allocation fails
     void *newPtr = realloc(ptr, newSize);
     if (!newPtr && newSize > 0) {
         free(ptr);
@@ -526,6 +528,7 @@ void *safeRealloc(void *ptr, size_t newSize) {
 }
 
 void *safeMalloc(size_t newSize) {
+    // allocate memory and exit program if allocation fails
     void *ptr = malloc(newSize);
     if (ptr == NULL) {
         freeAll();
@@ -591,6 +594,7 @@ void freeAll() {
  *Management*/
 
 Pair DBPrev(Pair address, int size) {
+    // get previous address in database grid
     if (--address.x >= 0) {
         return address;
     } else if (--address.y >= 0) {
@@ -630,7 +634,7 @@ void shrinkDB() {
 
 int shrinkDefragDB() {
     /* Defragment used locations to size dbSize - 1. 
-    Assuming grid is defragmented at size dbSize (by deleteShow), and there are enough used cells to fill dbSize - 1. */
+    Assuming grid is defragmented to dbSize (by deleteShow), and there are enough used cells to fill dbSize - 1.*/
     Pair target = {dbSize - 2, dbSize - 2};
     Pair source;
 
@@ -659,6 +663,7 @@ int shrinkDefragDB() {
 }
 
 Pair DBNext(Pair address, int size) {
+    // get next address in database grid
     if (++address.x < size) {
         return address;
     } else if (++address.y < size) {
@@ -722,6 +727,7 @@ int defragDB() {
 }
 
 int countShows() {
+    // count number of shows in database
     int amount = 0;
     for (Pair addr = {0,0}; addr.x != -1; addr = DBNext(addr, dbSize)) {
         if (database[addr.x][addr.y] == NULL) {

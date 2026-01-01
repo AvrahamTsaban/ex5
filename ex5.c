@@ -74,6 +74,7 @@ Pair DBNext(Pair address, int size);
 int shrinkDefragDB();
 int defragDB();
 char safeGetChar();
+void checkInitDB();
 
 void addMenu() {
     int choice;
@@ -167,9 +168,12 @@ void addShow() {
         expandDB();
     }
 
-    // create new show and inject into database
+    // create new show with given name and NULL seasons
     TVShow *newShow = safeMalloc(sizeof(TVShow));
     newShow->name = showName;
+    newShow->seasons = NULL;
+
+    // inject show into database at correct lexicographical position
     injectShow(newShow);
 }
 
@@ -182,7 +186,7 @@ void addSeason() {
     showName = NULL;
 
     // check if show exists, otherwise print error and return
-    if (*showPtr == NULL) {
+    if (showPtr == NULL) {
         printf("Show not found.\n");
         return;
     }
@@ -197,12 +201,17 @@ void addSeason() {
         return;
     }
 
-    // create new season with given name and get position to insert at
+    // create new season with given name and NULL episodes and next
     Season *tmp, *newSeason = safeMalloc(sizeof(Season));
     newSeason->name = seasonName;
+    newSeason->episodes = NULL;
+    newSeason->next = NULL;
+
+    // get position to insert at
     int position;
     printf("Enter the position:\n");
     scanf(" %d", &position);
+    getchar();
 
     // insert season at position: at head if position is 0 or list is empty, else traverse to position and insert
     newSeason->next = (*showPtr)->seasons;
@@ -228,7 +237,7 @@ void addEpisode() {
     showName = NULL;
 
     // check if show exists, otherwise print error and return
-    if (*showPtr == NULL) {
+    if (showPtr == NULL) {
         printf("Show not found.\n");
         return;
     }
@@ -256,16 +265,16 @@ void addEpisode() {
         return;
     }
     
-    // create new episode with given name
+    // create new episode with given name and NULL next
     Episode *tmp, *newEpisode = safeMalloc(sizeof(Episode));
     newEpisode->name = episodeName;
+    newEpisode->next = NULL;
 
     // get episode length and validate it
     printf("Enter the length (xx:xx:xx):\n");
     char *length = getString();
     while (!validLength(length)) {
         printf("Invalid length, enter again:\n");
-        printf("Enter the length (xx:xx:xx):\n");
         free(length);
         length = getString();
     }
@@ -307,7 +316,9 @@ void deleteShow() {
     // free show memory and defragment database
     freeShow(*showPtr);
     *showPtr = NULL;
-    defragDB();
+    while (defragDB()) {
+        continue;
+    }
 
     // shrink database if needed
     if (countShows() <= (dbSize - 1)*(dbSize - 1)) {
@@ -417,7 +428,7 @@ void deleteEpisode() {
 void printArray() {
     for (int r = 0; r < dbSize; ++r) {
         for (int c = 0; c < dbSize; ++c) {
-            printf("[%s] ", database[r][c]->name);
+            printf("[%s] ", database[c][r] ? database[c][r]->name : "NULL");
         }
         printf("\n");
     }
@@ -483,7 +494,7 @@ void printEpisode() {
     // get episode name and check if it already exists
     printf("Enter the name of the episode:\n");
     char *episodeName = getString();
-    Episode *tmp, **prevToEpisodePtr = findEpisode(*seasonPtr, episodeName);
+    Episode **prevToEpisodePtr = findEpisode(*seasonPtr, episodeName);
     free(episodeName);
     episodeName = NULL;
     
@@ -557,6 +568,11 @@ void freeShow(TVShow *show) {
 }
 
 void freeAll() {
+    // if database is NULL, nothing to free
+    if (database == NULL) {
+        return;
+    }
+
     // free all memory allocated inside database and database itself
     for (Pair cell = {0,0}; cell.x != -1 && database[cell.x][cell.y] != NULL; cell = DBNext(cell, dbSize)) {
         freeShow(database[cell.x][cell.y]);
@@ -588,6 +604,14 @@ Pair DBPrev(Pair address, int size) {
 }
 
 void shrinkDB() {
+    // free entire database to avoid zero-size reallocations
+    if (dbSize == 1) {
+        free(database[0]);
+        free(database);
+        database = NULL;
+        return;
+    }
+
     // defragment database to size dbSize - 1
     while(shrinkDefragDB()) {
         continue;
@@ -598,16 +622,16 @@ void shrinkDB() {
 
     // free last row and column
     free(database[dbSize]);
+    database = safeRealloc(database, (unsigned)dbSize * sizeof(TVShow**));
     for (int i = 0; i < dbSize; ++i) {
         database[i] = safeRealloc(database[i], (unsigned)dbSize * sizeof(TVShow*));
     }
-    database = safeRealloc(database, (unsigned)dbSize * sizeof(TVShow**));
 }
 
 int shrinkDefragDB() {
     /* Defragment used locations to size dbSize - 1. 
     Assuming grid is defragmented at size dbSize (by deleteShow), and there are enough used cells to fill dbSize - 1. */
-    Pair target = {dbSize - 1, dbSize - 1};
+    Pair target = {dbSize - 2, dbSize - 2};
     Pair source;
 
     // find first empty cell from DB end
@@ -615,8 +639,8 @@ int shrinkDefragDB() {
         target = DBPrev(target, dbSize - 1);
     }
 
-    // find first non-empty cell before target
     source = target;
+    // find first non-empty cell before target
     while (source.x != -1 && database[source.x][source.y] == NULL) {
         source = DBPrev(source, dbSize);
     }
@@ -709,9 +733,24 @@ int countShows() {
     return amount;
 }
 
+void checkInitDB() {
+    // database[0][0] availability is crucial for other functions, so initialize database to size 1x1
+    if (database == NULL) {
+        dbSize = 1;
+        database = safeMalloc(sizeof(TVShow**));
+        database[0] = safeMalloc(sizeof(TVShow*));
+        database[0][0] = NULL;
+    }
+}
+
 TVShow **findShow(char *name) {
+    /* this function (and others) crucially depends on database[0][0] being initialized. 
+    This function is called first in most user-facing functions (excluding printArray and freeAll), 
+    so that we only have to call checkInitDB here () */
+    checkInitDB();
+
     // search database for show with name 'name'. return pointer to pointer to show if found, NULL otherwise.
-    for (Pair addr = {0,0}; addr.x != -1; addr = DBNext(addr, dbSize)) {
+    for (Pair addr = {0,0}; addr.x != -1 && database[addr.x][addr.y] != NULL; addr = DBNext(addr, dbSize)) {
         if (strcmp(name, database[addr.x][addr.y]->name) == 0) {
             return &database[addr.x][addr.y];
         } else {
@@ -725,7 +764,8 @@ void injectShow(TVShow *insertShow) {
     Pair addr = {0,0};
 
     // iterate database until finding correct lexicographical position to insert
-    while (strcmp(insertShow->name, database[addr.x][addr.y]->name) > 0) {
+    int cmp;
+    do {
         if (database[addr.x][addr.y] == NULL) {
             // we have got to the end of used cells, insert here
             database[addr.x][addr.y] = insertShow;
@@ -734,8 +774,13 @@ void injectShow(TVShow *insertShow) {
         /* if (addr.x == -1 || strcmp(insertShow->name, database[addr.x][addr.y]->name) == 0)
             Should not happen, since we checked for duplicates and free space before calling injectShow. 
             Same for dbSize == 0 */
-        addr = DBNext(addr, dbSize);
-    }
+        cmp = strcmp(insertShow->name, database[addr.x][addr.y]->name);
+        if (cmp > 0) {
+            addr = DBNext(addr, dbSize);
+        } else if (cmp < 0) {
+            break;
+        } 
+    } while (cmp > 0);
 
     // Shift subsequent shows, Assuming there is space at the end (handled in addShow)
     TVShow *nextPtr;

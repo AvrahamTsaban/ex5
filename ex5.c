@@ -2,7 +2,6 @@
  ID: 207088733
  NAME: Avraham Tsaban
  TASK: ex5
- LANG: C
 ***********/
 
 #include <stdio.h>
@@ -75,6 +74,11 @@ int shrinkDefragDB();
 int defragDB();
 char safeGetChar();
 void checkInitDB();
+int checkLengthChar(char c, int index);
+
+/************
+****Menus****
+************/
 
 void addMenu() {
     int choice;
@@ -82,7 +86,7 @@ void addMenu() {
     printf("1. Add a TV show\n");
     printf("2. Add a season\n");
     printf("3. Add an episode\n");
-    scanf("%d", &choice);
+    scanf(" %d", &choice);
     getchar();
     switch (choice) {
         case 1: addShow(); break;
@@ -164,7 +168,7 @@ void addShow() {
     }
 
     // expand database if needed
-    if (dbSize < 1 || database[dbSize - 1][dbSize - 1] != NULL) {
+    if (database[dbSize - 1][dbSize - 1] != NULL) {
         expandDB();
     }
 
@@ -186,7 +190,7 @@ void addSeason() {
     showName = NULL;
 
     // check if show exists, otherwise print error and return
-    if (showPtr == NULL) {
+    if (showPtr == NULL || *showPtr == NULL) {
         printf("Show not found.\n");
         return;
     }
@@ -237,7 +241,7 @@ void addEpisode() {
     showName = NULL;
 
     // check if show exists, otherwise print error and return
-    if (showPtr == NULL) {
+    if (showPtr == NULL || *showPtr == NULL) {
         printf("Show not found.\n");
         return;
     }
@@ -250,7 +254,7 @@ void addEpisode() {
     seasonName = NULL;
 
     // check if season exists, otherwise print error and return
-    if (seasonPtr == NULL) {
+    if (seasonPtr == NULL || *seasonPtr == NULL) {
         printf("Season not found.\n");
         return;
     }
@@ -308,7 +312,7 @@ void deleteShow() {
     showName = NULL;
 
     // check if show exists, otherwise print error and return
-    if (showPtr == NULL) {
+    if (showPtr == NULL || *showPtr == NULL) {
         printf("Show not found.\n");
         return;
     }
@@ -335,7 +339,7 @@ void deleteSeason() {
     showName = NULL;
 
     // check if show exists, otherwise print error and return
-    if (showPtr == NULL) {
+    if (showPtr == NULL || *showPtr == NULL) {
         printf("Show not found.\n");
         return;
     }
@@ -348,23 +352,17 @@ void deleteSeason() {
     seasonName = NULL;
 
     // check if season exists, otherwise print error and return
-    if (prevToSeasonPtr == NULL) {
+    if (prevToSeasonPtr == NULL || *prevToSeasonPtr == NULL) {
         printf("Season not found.\n");
         return;
     }
 
     /* PrevToSeasonPtr points to the 'next' field of the previous season
     (or seasons field of the show), allowing us to NULLify or point it to the next season. */
-    if ((*prevToSeasonPtr)->next == NULL) {
-        freeSeason(*prevToSeasonPtr);
-        *prevToSeasonPtr = NULL;
-        return;
-    } else {
-        tmp = *prevToSeasonPtr;
-        *prevToSeasonPtr = (*prevToSeasonPtr)->next;
-        freeSeason(tmp);
-        return;
-    }
+    tmp = *prevToSeasonPtr;
+    *prevToSeasonPtr = (*prevToSeasonPtr)->next;
+    freeSeason(tmp);
+    return;
 }
 
 void deleteEpisode() {
@@ -376,7 +374,7 @@ void deleteEpisode() {
     showName = NULL;
 
     // check if show exists, otherwise print error and return
-    if (showPtr == NULL) {
+    if (showPtr == NULL || *showPtr == NULL) {
         printf("Show not found.\n");
         return;
     }
@@ -389,7 +387,7 @@ void deleteEpisode() {
     seasonName = NULL;
 
     // check if season exists, otherwise print error and return
-    if (seasonPtr == NULL) {
+    if (seasonPtr == NULL || *seasonPtr == NULL) {
         printf("Season not found.\n");
         return;
     }
@@ -402,34 +400,32 @@ void deleteEpisode() {
     episodeName = NULL;
     
     // check if episode exists, otherwise print error and return
-    if (prevToEpisodePtr == NULL) {
+    if (prevToEpisodePtr == NULL || *prevToEpisodePtr == NULL) {
         printf("Episode not found.\n");
         return;
     }
     
     /* prevToEpisodePtr points to the 'next' field of the previous episode
     (or episodes field of the season), allowing us to NULLify or point it to the next episode. */
-    if ((*prevToEpisodePtr)->next == NULL) {
-        freeEpisode(*prevToEpisodePtr);
-        *prevToEpisodePtr = NULL;
-        return;
-    } else {
-        tmp = *prevToEpisodePtr;
-        *prevToEpisodePtr = (*prevToEpisodePtr)->next;
-        freeEpisode(tmp);
-        return;
-    }
+    tmp = *prevToEpisodePtr;
+    *prevToEpisodePtr = (*prevToEpisodePtr)->next;
+    freeEpisode(tmp);
+    return;
 }
 
-/*************
-*****Print****
-**************/
+/************
+****Print****
+************/
 
 void printArray() {
     // print database as a 2D array
     for (int r = 0; r < dbSize; ++r) {
         for (int c = 0; c < dbSize; ++c) {
-            printf("[%s] ", database[c][r] ? database[c][r]->name : "NULL");
+            if (database[c][r] && database[c][r]->name) {
+                printf("[%s] ", database[c][r]->name);
+            } else {
+                printf("[NULL] ");
+            }
         }
         printf("\n");
     }
@@ -444,20 +440,26 @@ void printShow() {
     showName = NULL;
     
     // check if show exists, otherwise print error and return
-    if (showPtr == NULL) {
+    if (showPtr == NULL || *showPtr == NULL) {
         printf("Show not found.\n");
         return;
     }
-    
-    // print show details: name, seasons and episodes
+
+    // print show details: name, seasons and episodes (NULL subfields are checked only for safety)
+    if ((*showPtr)->name == NULL) {
+        printf("Invalid show data.\n");
+        return;
+    }
+
+    // print show details: name, seasons and episodes (NULL subfields are checked only for safety)
     printf("Name: %s\nSeasons:\n", (*showPtr)->name);
     Season *currentSeason = (*showPtr)->seasons;
     int i = 0;
-    while (currentSeason != NULL) {
+    while (currentSeason != NULL && currentSeason->name != NULL) {
         printf("\tSeason %d: %s\n", i++, currentSeason->name);
         int j = 0;
         Episode *currentEpisode = currentSeason->episodes;
-        while (currentEpisode != NULL) {
+        while (currentEpisode != NULL && currentEpisode->name != NULL) {
             printf("\t\tEpisode %d: %s (%s)\n", j++, currentEpisode->name, currentEpisode->length);
             currentEpisode = currentEpisode->next;
         }
@@ -474,7 +476,7 @@ void printEpisode() {
     showName = NULL;
 
     // check if show exists, otherwise print error and return
-    if (showPtr == NULL) {
+    if (showPtr == NULL || *showPtr == NULL) {
         printf("Show not found.\n");
         return;
     }
@@ -487,7 +489,7 @@ void printEpisode() {
     seasonName = NULL;
 
     // check if season exists, otherwise print error and return
-    if (seasonPtr == NULL) {
+    if (seasonPtr == NULL || *seasonPtr == NULL) {
         printf("Season not found.\n");
         return;
     }
@@ -500,7 +502,7 @@ void printEpisode() {
     episodeName = NULL;
     
     // check if episode exists, otherwise print error and return
-    if (prevToEpisodePtr == NULL) {
+    if (prevToEpisodePtr == NULL || *prevToEpisodePtr == NULL) {
         printf("Episode not found.\n");
         return;
     }
@@ -518,12 +520,19 @@ void printEpisode() {
 
 void *safeRealloc(void *ptr, size_t newSize) {
     // reallocate memory and exit program if allocation fails
-    void *newPtr = realloc(ptr, newSize);
-    if (!newPtr && newSize > 0) {
+    if (newSize == 0) {
         free(ptr);
         freeAll();
         exit(1);
     }
+
+    void *newPtr = realloc(ptr, newSize);
+    if (!newPtr) {
+        free(ptr);
+        freeAll();
+        exit(1);
+    }
+
     return newPtr;
 }
 
@@ -537,28 +546,12 @@ void *safeMalloc(size_t newSize) {
     return ptr;
 }
 
-void freeEpisode(Episode *e) {
-    // free episode e. Assumes e is not NULL. calling function is responsible for unlinking e from list.
-    free(e->length);
-    free(e->name);
-    free(e);
-}
-
-void freeSeason(Season *s) {
-    // free s and all its episodes. Assumes s is not NULL. calling function is responsible for unlinking s from list.
-    Episode *current = s->episodes;
-    while (current != NULL) {
-        Episode *next = current->next;
-        freeEpisode(current);
-        current = next;
-    }
-
-    free(s->name);   
-    free(s);
-}
-
 void freeShow(TVShow *show) {
     /* free show and all its seasons and episodes. Assumes show is not NULL. calling function is responsible for defragmenting DB. */
+    if (show == NULL) {
+        return;
+    }
+
     Season *current = show->seasons;
     while (current != NULL) {
         Season *next = current->next;
@@ -566,13 +559,61 @@ void freeShow(TVShow *show) {
         current = next;
     }
 
-    free(show->name);
+    if (show->name != NULL) {
+        free(show->name);
+        show->name = NULL;
+    }
     free(show);
+    show = NULL;
+}
+
+void freeSeason(Season *s) {
+    // free s and all its episodes. Assumes s is not NULL. calling function is responsible for unlinking s from list.
+    if (s == NULL) {
+        return;
+    }
+
+    Episode *current = s->episodes;
+    while (current != NULL) {
+        Episode *next = current->next;
+        freeEpisode(current);
+        current = next;
+    }
+
+    if (s->name != NULL) {
+        free(s->name);   
+        s->name = NULL;
+    }
+    free(s);
+    s = NULL;
+}
+
+void freeEpisode(Episode *e) {
+    // free episode e. Assumes e is not NULL. calling function is responsible for unlinking e from list.
+    if (e == NULL) {
+        return;
+    } 
+
+    if (e->length != NULL) {
+        free(e->length);   
+        e->length = NULL;
+    }
+    if (e->name != NULL) {
+        free(e->name);   
+        e->name = NULL;
+    }
+    free(e);
+    e = NULL;
 }
 
 void freeAll() {
-    // if database is NULL, nothing to free
+    // if database is NULL or uninitialized, freeDB and return
     if (database == NULL) {
+        return;
+    } else if (database[0] == NULL) {
+        free(database);
+        database = NULL;
+        dbSize = 0;
         return;
     }
 
@@ -583,9 +624,10 @@ void freeAll() {
 
     for (int r = 0; r < dbSize; ++r) {
         free(database[r]);
+        database[r] = NULL;
     }
 
-    free (database);
+    free(database);
     database = NULL;
     dbSize = 0;
 }
@@ -601,6 +643,7 @@ Pair DBPrev(Pair address, int size) {
         address.x = size - 1;
         return address;
     } else {
+        // no previous address, return (-1,-1) to indicate this
         address.x = -1;
         address.y = -1;
         return address;
@@ -609,10 +652,11 @@ Pair DBPrev(Pair address, int size) {
 
 void shrinkDB() {
     // free entire database to avoid zero-size reallocations
-    if (dbSize == 1) {
+    if (dbSize <= 1) {
         free(database[0]);
         free(database);
         database = NULL;
+        dbSize = 0;
         return;
     }
 
@@ -626,9 +670,10 @@ void shrinkDB() {
 
     // free last row and column
     free(database[dbSize]);
+    database[dbSize] = NULL;
     database = safeRealloc(database, (unsigned)dbSize * sizeof(TVShow**));
-    for (int i = 0; i < dbSize; ++i) {
-        database[i] = safeRealloc(database[i], (unsigned)dbSize * sizeof(TVShow*));
+    for (int r = 0; r < dbSize; ++r) {
+        database[r] = safeRealloc(database[r], (unsigned)dbSize * sizeof(TVShow*));
     }
 }
 
@@ -638,7 +683,7 @@ int shrinkDefragDB() {
     Pair target = {dbSize - 2, dbSize - 2};
     Pair source;
 
-    // find first empty cell from DB end
+    // find first empty cell from new DB end
     while (target.x != -1 && database[target.x][target.y] != NULL) {
         target = DBPrev(target, dbSize - 1);
     }
@@ -670,6 +715,7 @@ Pair DBNext(Pair address, int size) {
         address.x = 0;
         return address;
     } else {
+        // no next address, return (-1,-1) to indicate this
         address.x = -1;
         address.y = -1;
         return address;
@@ -729,12 +775,8 @@ int defragDB() {
 int countShows() {
     // count number of shows in database
     int amount = 0;
-    for (Pair addr = {0,0}; addr.x != -1; addr = DBNext(addr, dbSize)) {
-        if (database[addr.x][addr.y] == NULL) {
-            return amount;
-        } else {
-            ++amount;
-        }
+    for (Pair addr = {0,0}; addr.x != -1 && database[addr.x][addr.y] != NULL; addr = DBNext(addr, dbSize)) {
+        ++amount;
     }
     return amount;
 }
@@ -742,10 +784,14 @@ int countShows() {
 void checkInitDB() {
     // database[0][0] availability is crucial for other functions, so initialize database to size 1x1
     if (database == NULL) {
-        dbSize = 1;
         database = safeMalloc(sizeof(TVShow**));
+        database[0] = NULL;
+    }
+
+    if (database[0] == NULL) {
         database[0] = safeMalloc(sizeof(TVShow*));
         database[0][0] = NULL;
+        dbSize = 1;
     }
 }
 
@@ -754,6 +800,10 @@ TVShow **findShow(char *name) {
     This function is called first in most user-facing functions (excluding printArray and freeAll), 
     so that we only have to call checkInitDB here () */
     checkInitDB();
+
+    if (name == NULL) {
+        return NULL;
+    }
 
     // search database for show with name 'name'. return pointer to pointer to show if found, NULL otherwise.
     for (Pair addr = {0,0}; addr.x != -1 && database[addr.x][addr.y] != NULL; addr = DBNext(addr, dbSize)) {
@@ -767,26 +817,30 @@ TVShow **findShow(char *name) {
 }
 
 void injectShow(TVShow *insertShow) {
+    if (insertShow == NULL || insertShow->name == NULL) {
+        return;
+    }
     Pair addr = {0,0};
 
     // iterate database until finding correct lexicographical position to insert
-    int cmp;
     do {
-        if (database[addr.x][addr.y] == NULL) {
-            // we have got to the end of used cells, insert here
+        if (database[addr.x][addr.y] == NULL || database[addr.x][addr.y] -> name == NULL) {
+            // we have got to the end of used cells (or to corrupted data), insert here
             database[addr.x][addr.y] = insertShow;
             return;
         }
-        /* if (addr.x == -1 || strcmp(insertShow->name, database[addr.x][addr.y]->name) == 0)
-            Should not happen, since we checked for duplicates and free space before calling injectShow. 
-            Same for dbSize == 0 */
-        cmp = strcmp(insertShow->name, database[addr.x][addr.y]->name);
-        if (cmp > 0) {
-            addr = DBNext(addr, dbSize);
+        int cmp = strcmp(insertShow->name, database[addr.x][addr.y]->name);
+        if (cmp == 0) {
+            // duplicate show name, should not happen since we checked before calling injectShow
+            return;
         } else if (cmp < 0) {
+            // found position to insert
             break;
-        } 
-    } while (cmp > 0);
+        } else {
+            // continue searching
+            addr = DBNext(addr, dbSize);
+        }
+    } while (addr.x != -1);
 
     // Shift subsequent shows, Assuming there is space at the end (handled in addShow)
     TVShow *nextPtr;
@@ -807,6 +861,10 @@ Season **findSeason(TVShow *show, char *name) {
     /* Search show's seasons for season with name 'name'.
     Return the address of the previous season's 'next' field (or show's seasons) if found,
     providing a ** to the season. Otherwise, return NULL. */
+    if (show == NULL || name == NULL) {
+        return NULL;
+    }
+
     Season **current = &(show->seasons);
     while (*current != NULL) {
         if (strcmp(name, (*current)->name) == 0) {
@@ -821,6 +879,10 @@ Episode **findEpisode(Season *season, char *name) {
     /* Search season's episodes for episode with name 'name'.
     Return the address of the previous episode's 'next' field (or season's episodes) if found,
     providing a ** to the episode. Otherwise, return NULL. */
+    if (season == NULL || name == NULL) {
+        return NULL;
+    }
+
     Episode **current = &(season->episodes);
     while (*current != NULL) {
         if (strcmp(name, (*current)->name) == 0) {
@@ -841,7 +903,7 @@ char *getString() {
     
     // read characters until newline and append to str
     newChar = safeGetChar();
-    while (newChar != '\n') { 
+    while (newChar != '\n' && newChar != '\0') { 
         // append newChar to str
         str[currentLen] = newChar;
         ++currentLen;
@@ -861,7 +923,7 @@ char *getString() {
 char safeGetChar() {
     // get a character from stdin, returning '\n' on EOF or null character
     int inp = getchar();
-    if (inp == EOF || inp == '\0') {
+    if (inp == EOF) {
         return '\n';
     } else {
         return (char)inp;
@@ -870,20 +932,37 @@ char safeGetChar() {
 
 int validLength(char *s) {
     // validate that s is in format xx:xx:xx with proper ranges
-    if (s == NULL) {
+    if (s == NULL || strlen(s) != 8) {
         return 0;
     }
-    if (strlen(s) != 8) {
-        return 0;
-    }
-    for (short i = 0; i < 8; ++i) {
-        if ((i < 2 || i == 4 || i == 7) && (s[i] > '9' || s[i] < '0')) {
+
+    for (short index = 0; index < 8; ++index) {
+        if (!checkLengthChar(s[index], index)) {
             return 0;
-        } else if ((i == 2 || i == 5) && (s[i] != ':')) {
-            return 0;
-        } else if ((i == 3 || i == 6) && (s[i] > '5' || s[i] < '0')) {
-            return 0;
-        } 
+        }
     }
     return 1;
+}
+
+int checkLengthChar(char c, int index) {
+    switch (index) {
+        case 2:
+        case 5:
+            if (c == ':') {
+                return 1;
+            }
+            break;
+        case 3:
+        case 6:
+            if (c <= '5' && c >= '0') {
+                return 1;
+            }
+            break;
+        default:
+            if (c <= '9' && c >= '0') {
+                return 1;
+            }
+            break;
+    }
+    return 0;
 }

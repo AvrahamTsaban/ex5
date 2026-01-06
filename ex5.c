@@ -76,12 +76,17 @@ char safeGetChar();
 void checkInitDB();
 int checkLengthChar(char c, int index);
 
+void mainMenu();
+void addMenu();
+void deleteMenu();
+void printMenuSub();
+
 /************
 ****Menus****
 ************/
 
 void addMenu() {
-    int choice;
+    int choice = 0;
     printf("Choose an option:\n");
     printf("1. Add a TV show\n");
     printf("2. Add a season\n");
@@ -92,11 +97,12 @@ void addMenu() {
         case 1: addShow(); break;
         case 2: addSeason(); break;
         case 3: addEpisode(); break;
+        default: break;
     }
 }
 
 void deleteMenu() {
-    int choice;
+    int choice = 0;
     printf("Choose an option:\n");
     printf("1. Delete a TV show\n");
     printf("2. Delete a season\n");
@@ -107,11 +113,12 @@ void deleteMenu() {
         case 1: deleteShow(); break;
         case 2: deleteSeason(); break;
         case 3: deleteEpisode(); break;
+        default: break;
     }
 }
 
 void printMenuSub() {
-    int choice;
+    int choice = 0;
     printf("Choose an option:\n");
     printf("1. Print a TV show\n");
     printf("2. Print an episode\n");
@@ -122,6 +129,7 @@ void printMenuSub() {
         case 1: printShow(); break;
         case 2: printEpisode(); break;
         case 3: printArray(); break;
+        default: break;
     }
 }
 
@@ -136,6 +144,7 @@ void mainMenu() {
 int main() {
     int choice;
     do {
+        choice = 0;
         mainMenu();
         scanf("%d", &choice);
         getchar();
@@ -144,6 +153,7 @@ int main() {
             case 2: deleteMenu(); break;
             case 3: printMenuSub(); break;
             case 4: freeAll(); break;
+            default: break;
         }
     } while (choice != 4);
     return 0;
@@ -936,7 +946,7 @@ int validLength(char *s) {
         return 0;
     }
 
-    for (short index = 0; index < 8; ++index) {
+    for (int index = 0; index < 8; ++index) {
         if (!checkLengthChar(s[index], index)) {
             return 0;
         }

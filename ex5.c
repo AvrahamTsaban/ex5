@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define LENGTH_STR_LEN 8
+
 typedef struct Episode {
     char *name;
     char *length;
@@ -86,23 +88,22 @@ void printMenuSub();
 ************/
 
 void addMenu() {
-    int choice = 0;
+    int choice;
     printf("Choose an option:\n");
     printf("1. Add a TV show\n");
     printf("2. Add a season\n");
     printf("3. Add an episode\n");
-    scanf(" %d", &choice);
+    scanf("%d", &choice);
     getchar();
     switch (choice) {
         case 1: addShow(); break;
         case 2: addSeason(); break;
         case 3: addEpisode(); break;
-        default: break;
     }
 }
 
 void deleteMenu() {
-    int choice = 0;
+    int choice;
     printf("Choose an option:\n");
     printf("1. Delete a TV show\n");
     printf("2. Delete a season\n");
@@ -113,12 +114,11 @@ void deleteMenu() {
         case 1: deleteShow(); break;
         case 2: deleteSeason(); break;
         case 3: deleteEpisode(); break;
-        default: break;
     }
 }
 
 void printMenuSub() {
-    int choice = 0;
+    int choice;
     printf("Choose an option:\n");
     printf("1. Print a TV show\n");
     printf("2. Print an episode\n");
@@ -129,7 +129,6 @@ void printMenuSub() {
         case 1: printShow(); break;
         case 2: printEpisode(); break;
         case 3: printArray(); break;
-        default: break;
     }
 }
 
@@ -144,7 +143,6 @@ void mainMenu() {
 int main() {
     int choice;
     do {
-        choice = 0;
         mainMenu();
         scanf("%d", &choice);
         getchar();
@@ -153,7 +151,6 @@ int main() {
             case 2: deleteMenu(); break;
             case 3: printMenuSub(); break;
             case 4: freeAll(); break;
-            default: break;
         }
     } while (choice != 4);
     return 0;
@@ -221,11 +218,11 @@ void addSeason() {
     newSeason->episodes = NULL;
     newSeason->next = NULL;
 
-    // get position to insert at
+    // get position to insert at and clear input buffer
     int position;
     printf("Enter the position:\n");
     scanf(" %d", &position);
-    getchar();
+    while (getchar() != '\n');
 
     // insert season at position: at head if position is 0 or list is empty, else traverse to position and insert
     newSeason->next = (*showPtr)->seasons;
@@ -294,10 +291,11 @@ void addEpisode() {
     }
     newEpisode->length = length;
 
-    // get position to insert at
+    // get position to insert at and clear input buffer
     int position;
     printf("Enter the position:\n");
     scanf(" %d", &position);
+    while (getchar() != '\n'); 
 
     // insert episode at position: at head if position is 0 or list is empty, else traverse to position and insert
     newEpisode->next = (*seasonPtr)->episodes;
@@ -942,11 +940,11 @@ char safeGetChar() {
 
 int validLength(char *s) {
     // validate that s is in format xx:xx:xx with proper ranges
-    if (s == NULL || strlen(s) != 8) {
+    if (s == NULL || strlen(s) != LENGTH_STR_LEN) {
         return 0;
     }
 
-    for (int index = 0; index < 8; ++index) {
+    for (int index = 0; index < LENGTH_STR_LEN; ++index) {
         if (!checkLengthChar(s[index], index)) {
             return 0;
         }
@@ -955,20 +953,24 @@ int validLength(char *s) {
 }
 
 int checkLengthChar(char c, int index) {
+    // check if character c is valid at position index in length string (xx:xx:xx format)
     switch (index) {
         case 2:
+            // fallthrough
         case 5:
             if (c == ':') {
                 return 1;
             }
             break;
         case 3:
+            // fallthrough
         case 6:
             if (c <= '5' && c >= '0') {
                 return 1;
             }
             break;
         default:
+            // cases 0,1,4,7
             if (c <= '9' && c >= '0') {
                 return 1;
             }

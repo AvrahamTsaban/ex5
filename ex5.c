@@ -9,6 +9,7 @@
 #include <string.h>
 
 #define LENGTH_STR_LEN 8
+#define BASE_STR_LEN 16
 
 typedef struct Episode {
     char *name;
@@ -34,8 +35,6 @@ typedef struct Pair {
     int x;
     int y;
 } Pair;
-
-#define BASE_STR_LEN 16
 
 char *getString();
 int getInt();

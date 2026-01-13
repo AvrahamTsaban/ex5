@@ -22,7 +22,7 @@ A robust C-based TV show database management system that enables users to manage
 ## Credits
 
 This project includes initial scaffolding and design contributions from Eliyahu Houri, one of the course Teaching Assistants:
-- **Contribution**: Menus, data structures, function signatures, and overall architecture design
+- **Contribution**: Menus, data structures, function signatures, tests, and overall architecture design
 - **Reference**: [View original contribution](https://github.com/CSI-BIU/ex5/commit/23c7aa87d514e1e4afa317a73b2cf73f8a4e77f0)
 
 **Copyright Notice**: The intellectual property rights for the aforementioned contributions remain with their original author and are not claimed by the repository owner. All other code and documentation in this repository are provided under the terms specified in the accompanying license file. 

@@ -1,249 +1,132 @@
-# TV Show Database Management System
+# Exercise 5 — Pointers, Dynamic Allocations, Linked Lists
 
 ## Overview
 
-A robust C-based TV show database management system that enables users to manage a hierarchical collection of TV shows, seasons, and episodes. The system employs a 2D dynamic array with automatic memory management and intelligent defragmentation to maintain optimal performance and memory utilization.
+A TV show database management system implemented in C, using a dynamically resizing 2D array of pointers and hierarchical linked lists for seasons and episodes. The system supports add, delete, print, and search operations with automatic defragmentation and full memory management (zero leaks required).
+
+## Author
+
+Avraham Tsaban
+
+## Compilation
+
+```bash
+gcc -Wall -Wextra -Werror -g -std=c99 ex5.c -o ex5.out
+```
+
+## Running
+
+```bash
+./ex5.out
+```
+
+Memory leak checking (recommended):
+
+```bash
+valgrind ./ex5.out
+```
 
 ## Features
 
-### Core Functionality
-- **Show Management**: Add, retrieve, and delete TV shows with lexicographical ordering
-- **Season Management**: Manage seasons within shows with custom positioning
-- **Episode Management**: Organize episodes within seasons with validation and time tracking
-- **Database Operations**: Dynamic expansion/contraction with automatic defragmentation
+- **Show Management** — Add, retrieve, and delete TV shows stored in lexicographical order.
+- **Season Management** — Add and remove seasons within shows with custom positioning.
+- **Episode Management** — Add and remove episodes within seasons, with HH:MM:SS time format validation.
+- **Dynamic Database** — 2D array that expands/shrinks automatically with defragmentation.
+- **Full Memory Management** — All allocations tracked and freed; designed for zero bytes lost under valgrind.
 
-### Technical Highlights
-- Dynamic 2D array-based database with automatic scaling
-- Intelligent defragmentation and memory consolidation
-- Hierarchical linked-list structure for seasons and episodes
-- Input validation for time format (HH:MM:SS)
-- Comprehensive error handling and graceful failure modes
+## Menu
 
-## Credits
-
-This project includes initial scaffolding and design contributions from Eliyahu Houri, one of the course Teaching Assistants:
-- **Contribution**: Menus, data structures, function signatures, tests, and overall architecture design
-- **Reference**: [View original contribution](https://github.com/CSI-BIU/ex5/commit/23c7aa87d514e1e4afa317a73b2cf73f8a4e77f0)
-
-**Copyright Notice**: The intellectual property rights for the aforementioned contributions remain with their original author and are not claimed by the repository owner. All other code and documentation in this repository are provided under the terms specified in the accompanying license file. 
-
-## Architecture
-
-### Data Structures
-
-#### Episode
-```c
-typedef struct Episode {
-    char *name;           // Episode title
-    char *length;         // Duration in HH:MM:SS format
-    struct Episode *next; // Pointer to next episode in linked list
-} Episode;
 ```
-
-#### Season
-```c
-typedef struct Season {
-    char *name;           // Season identifier
-    Episode *episodes;    // Linked list of episodes
-    struct Season *next;  // Pointer to next season
-} Season;
-```
-
-#### TVShow
-```c
-typedef struct TVShow {
-    char *name;          // Show name
-    Season *seasons;     // Linked list of seasons
-} TVShow;
-```
-
-#### Database Layout
-- **Type**: 2D dynamic array of `TVShow*` pointers
-- **Organization**: Row-major ordering for traversal
-- **Capacity**: Expands/shrinks based on show count
-- **Status**: NULL cells indicate empty slots
-
-### Key Algorithms
-
-#### Database Navigation
-- `DBNext(Pair, int)`: Advance to next position in row-major order
-- `DBPrev(Pair, int)`: Move to previous position in row-major order
-- Returns `(-1, -1)` sentinel to indicate boundary conditions
-
-#### Defragmentation
-- **Forward Defragmentation** (`defragDB`): Consolidates used cells from database start
-- **Backward Defragmentation** (`shrinkDefragDB`): Consolidates to smaller capacity
-- Triggered automatically during show deletion and database resizing
-
-#### Search Operations
-All search functions return pointer-to-pointer, enabling efficient deletion without relocation:
-- `findShow()`: Lexicographical search in database
-- `findSeason()`: Linear search in season linked list
-- `findEpisode()`: Linear search in episode linked list
-
-## API Reference
-
-### Add Operations
-
-#### `void addShow()`
-Adds a new TV show to the database.
-- **Precondition**: Show name must be unique
-- **Side Effects**: Triggers database expansion if capacity exceeded
-- **Time Complexity**: O(n) for lexicographical insertion
-
-#### `void addSeason()`
-Adds a season to an existing show.
-- **Precondition**: Show must exist
-- **Parameters**: Season name, insertion position
-- **Position**: 0 = head, n = tail
-
-#### `void addEpisode()`
-Adds an episode to a season.
-- **Precondition**: Show and season must exist
-- **Validation**: Episode length must be in HH:MM:SS format
-- **Parameters**: Episode name, length, insertion position
-
-### Delete Operations
-
-#### `void deleteShow()`
-Removes a show and all associated data.
-- **Side Effects**: Triggers defragmentation and potential database shrinking
-- **Memory**: Recursively frees all seasons and episodes
-
-#### `void deleteSeason()`
-Removes a season and its episodes.
-
-#### `void deleteEpisode()`
-Removes an episode from a season.
-
-### Print Operations
-
-#### `void printShow()`
-Displays show hierarchy: name, seasons, and episodes.
-
-#### `void printEpisode()`
-Displays specific episode details.
-
-#### `void printArray()`
-Displays 2D database grid for debugging.
-
-### Memory Management
-
-#### `void *safeMalloc(size_t)`
-Allocates memory with error checking.
-- **Behavior**: Exits program on failure
-
-#### `void *safeRealloc(void *, size_t)`
-Reallocates memory with error checking.
-- **Behavior**: Exits program on failure
-
-#### Memory Cleanup Functions
-- `freeEpisode(Episode*)`: Frees single episode
-- `freeSeason(Season*)`: Recursively frees season and episodes
-- `freeShow(TVShow*)`: Recursively frees show, seasons, and episodes
-- `freeAll()`: Global cleanup on program termination
-
-### Input Functions
-
-#### `char *getString()`
-Dynamically reads input string with auto-expansion.
-- **Behavior**: Reads until newline or EOF
-- **Returns**: Dynamically allocated, null-terminated string
-- **Caller Responsibility**: Must free returned pointer
-
-#### `int validLength(char *s)`
-Validates time format (HH:MM:SS).
-- **Format**: Exactly 8 characters: `dd:dd:dd`
-- **Returns**: 1 if valid, 0 otherwise
-
-## Usage
-
-### Interactive Menu System
-
-Main Menu:
-```
-1. Add (show/season/episode)
-2. Delete (show/season/episode)
-3. Print (show/episode/array)
+1. Add (show / season / episode)
+2. Delete (show / season / episode)
+3. Print (show / episode / array)
 4. Exit
 ```
 
-### Example Session
-```
-Choose an option:
-1. Add
-Enter the name of the show:
-Breaking Bad
-Enter the name of the season:
-Season 1
-Enter the position:
-0
-Enter the name of the episode:
-Pilot
-Enter the length (xx:xx:xx):
-00:58:00
+## Code Structure
+
+All code is in a single file `ex5.c` (1018 lines). The database is a global 2D dynamic array (`TVShow ***database`) with hierarchical linked lists for seasons and episodes.
+
+### Data Structures
+
+```c
+typedef struct Episode { char *name; char *length; struct Episode *next; } Episode;
+typedef struct Season  { char *name; Episode *episodes; struct Season *next; } Season;
+typedef struct TVShow  { char *name; Season *seasons; } TVShow;
+typedef struct Pair    { int x; int y; } Pair;  // 2D grid coordinate
 ```
 
-## Performance Characteristics
+### CRUD Operations
 
-| Operation | Time Complexity | Notes |
-|-----------|-----------------|-------|
-| Add Show | O(n) | Lexicographical search + insertion |
-| Add Season/Episode | O(m) | Linear list traversal |
-| Delete Show | O(n²) | Includes defragmentation |
-| Find Show | O(n) | Database scan |
-| Find Season/Episode | O(m) | List traversal |
-| Database Resize | O(n²) | Defragmentation required |
+| Function | Description |
+|----------|-------------|
+| `addShow()` | Creates a show, expands DB if needed, inserts in lexicographical order. |
+| `addSeason()` | Inserts a season into a show's linked list at a given position. |
+| `addEpisode()` | Inserts an episode into a season's list with time format validation. |
+| `deleteShow()` | Frees a show and all children, defragments and possibly shrinks the DB. |
+| `deleteSeason()` | Unlinks and frees a season from a show. |
+| `deleteEpisode()` | Unlinks and frees an episode from a season. |
+| `printShow()` | Prints show name, all seasons and episodes. |
+| `printEpisode()` | Prints a single episode's name and length. |
+| `printArray()` | Prints the 2D database grid (debug view). |
 
-## Error Handling
+### Search Functions
 
-### Validation Checks
-- Show/season/episode existence verification
-- Duplicate name prevention
-- Episode length format validation
-- Memory allocation failure detection
+All return pointer-to-pointer for efficient in-place deletion:
 
-### Recovery Strategies
-- Graceful error messages to user
-- Automatic database cleanup on fatal errors
-- Program termination on unrecoverable failures
+| Function | Description |
+|----------|-------------|
+| `findShow(name)` → `TVShow**` | Searches the DB for a show by name. |
+| `findSeason(show, name)` → `Season**` | Searches a show's season linked list. |
+| `findEpisode(season, name)` → `Episode**` | Searches a season's episode linked list. |
 
-## Compilation and Testing
+### Database Management
 
-### Build
-```bash
-gcc -o ex5 ex5.c
-```
+| Function | Description |
+|----------|-------------|
+| `expandDB()` | Grows the grid by 1 in each dimension, then defragments. |
+| `shrinkDB()` | Defragments to fit a smaller grid, then shrinks by 1 in each dimension. |
+| `defragDB()` | Forward defragmentation — consolidates entries from the start. |
+| `shrinkDefragDB()` | Backward defragmentation — packs entries to fit within `(dbSize−1)²`. |
+| `injectShow(show)` | Inserts show at correct lexicographical position, shifting subsequent entries. |
+| `countShows()` | Counts non-NULL entries in the DB. |
+| `checkInitDB()` | Lazily initializes the DB to a 1×1 grid on first use. |
+| `DBNext(address, size)` → `Pair` | Next coordinate in column-major order (`(-1,-1)` at end). |
+| `DBPrev(address, size)` → `Pair` | Previous coordinate in column-major order (`(-1,-1)` at start). |
 
-### Testing
-Test files available in `tests/` directory:
-- `test1.tst` through `test6.tst`: Comprehensive functionality tests
+### Memory Management
 
-## Implementation Notes
+| Function | Description |
+|----------|-------------|
+| `safeMalloc(size)` | `malloc` wrapper — exits on failure after freeing everything. |
+| `safeRealloc(ptr, size)` | `realloc` wrapper — exits on failure. |
+| `freeEpisode(e)` | Frees episode name, length, and struct. |
+| `freeSeason(s)` | Frees a season and all its episodes. |
+| `freeShow(show)` | Frees a show and all its seasons/episodes. |
+| `freeAll()` | Frees the entire database (all shows, rows, top-level pointer). |
 
-### Design Decisions
+### Input / Validation
 
-1. **Pointer-to-Pointer Returns**: Search functions return `**` to enable efficient in-place list modifications
+| Function | Description |
+|----------|-------------|
+| `getString()` → `char*` | Dynamically reads a line from stdin (auto-expanding buffer). |
+| `safeGetChar()` → `char` | Reads one character; returns `'\n'` on EOF. |
+| `validLength(s)` → `int` | Validates string matches `HH:MM:SS` format. |
+| `checkLengthChar(c, index)` → `int` | Checks character validity at a given position in `HH:MM:SS`. |
 
-2. **Row-Major Traversal**: Database uses row-major order for consistent traversal semantics
+## Project Files
 
-3. **Dual Defragmentation**: Separate forward and backward algorithms optimize for different scenarios
+| File | Description |
+|------|-------------|
+| `ex5.c` | Source code |
+| `ex5.example` | Reference Linux executable provided by the TA |
+| `ex5_instructions.md` | Exercise instructions |
+| `tests/` | Test files (`test1.tst` – `test6.tst`) provided by the TA |
 
-4. **Lazy Initialization**: Database initialized on first user operation (not at program start)
+## Code Ownership
 
-5. **Safe Memory Operations**: All allocations checked with explicit error handling
+The source code includes initial scaffolding and design by the TA: menus, data structures, function signatures, and overall architecture. The student implemented the function bodies. See the [original scaffolding commit](https://github.com/CSI-BIU/ex5/commit/23c7aa87d514e1e4afa317a73b2cf73f8a4e77f0) for details.
 
-### Edge Cases Handled
-- Empty database operations
-- NULL pointer validations
-- EOF during string input
-- Zero-size reallocations
-- Boundary conditions in grid traversal
+## Attribution
 
-## Future Enhancements
-
-- Persistent storage (file I/O)
-- Show rating system
-- Advanced search and filtering
-- Database export (JSON/CSV)
-- Performance optimization for large datasets
+The exercise design, specifications, instructions, scaffolding code, and test files were created by **Eliyahu Houri**, the Teaching Assistant responsible for this assignment. The instructions file (`ex5_instructions.md`), the reference executable (`ex5.example`), and the `tests/` directory are his work. Any license in this repository applies only to the student's code implementation.

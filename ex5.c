@@ -1,5 +1,4 @@
 /***********
- ID: 207088733
  NAME: Avraham Tsaban
  TASK: ex5
 ***********/
@@ -28,8 +27,8 @@ typedef struct TVShow {
     Season *seasons;
 } TVShow;
 
-TVShow ***database = NULL;
-int dbSize = 0;
+static TVShow ***database = NULL;
+static int dbSize = 0;
 
 typedef struct Pair {
     int x;
@@ -87,47 +86,68 @@ void printMenuSub();
 ************/
 
 void addMenu() {
-    int choice;
+    int choice = 0;
     printf("Choose an option:\n");
     printf("1. Add a TV show\n");
     printf("2. Add a season\n");
     printf("3. Add an episode\n");
-    scanf("%d", &choice);
-    getchar();
+    int result = 0;
+    while (!result) {
+        result = scanf("%d", &choice);
+        if (!result) {
+            printf("Invalid input, enter again:\n");
+        }
+        while (getchar() != '\n');
+    }
     switch (choice) {
         case 1: addShow(); break;
         case 2: addSeason(); break;
         case 3: addEpisode(); break;
+        default: break;
     }
 }
 
 void deleteMenu() {
-    int choice;
+    int choice = 0;
     printf("Choose an option:\n");
     printf("1. Delete a TV show\n");
     printf("2. Delete a season\n");
     printf("3. Delete an episode\n");
-    scanf("%d", &choice);
-    getchar();
+    int result = 0;
+    while (!result) {
+        result = scanf("%d", &choice);
+        if (!result) {
+            printf("Invalid input, enter again:\n");
+        }
+        while (getchar() != '\n');
+    }
     switch (choice) {
         case 1: deleteShow(); break;
         case 2: deleteSeason(); break;
         case 3: deleteEpisode(); break;
+        default: break;
     }
 }
 
 void printMenuSub() {
-    int choice;
+    int choice = 0;
     printf("Choose an option:\n");
     printf("1. Print a TV show\n");
     printf("2. Print an episode\n");
     printf("3. Print the array\n");
-    scanf("%d", &choice);
-    getchar();
+    int result = 0;
+    while (!result) {
+        result = scanf("%d", &choice);
+        if (!result) {
+            printf("Invalid input, enter again:\n");
+        }
+        while (getchar() != '\n');
+    }
     switch (choice) {
         case 1: printShow(); break;
         case 2: printEpisode(); break;
         case 3: printArray(); break;
+        default: break;
     }
 }
 
@@ -140,16 +160,23 @@ void mainMenu() {
 }
 
 int main() {
-    int choice;
+    int choice = 0;
     do {
         mainMenu();
-        scanf("%d", &choice);
-        getchar();
+        int result = 0;
+        while (!result) {
+            result = scanf("%d", &choice);
+            if (!result) {
+                printf("Invalid input, enter again:\n");
+            }
+            while (getchar() != '\n');
+        }
         switch (choice) {
             case 1: addMenu(); break;
             case 2: deleteMenu(); break;
             case 3: printMenuSub(); break;
             case 4: freeAll(); break;
+            default: break;
         }
     } while (choice != 4);
     return 0;
@@ -179,7 +206,7 @@ void addShow() {
     }
 
     // create new show with given name and NULL seasons
-    TVShow *newShow = safeMalloc(sizeof(TVShow));
+    TVShow *newShow = (TVShow*)safeMalloc(sizeof(TVShow));
     newShow->name = showName;
     newShow->seasons = NULL;
 
@@ -212,16 +239,21 @@ void addSeason() {
     }
 
     // create new season with given name and NULL episodes and next
-    Season *tmp, *newSeason = safeMalloc(sizeof(Season));
+    Season *tmp, *newSeason = (Season*)safeMalloc(sizeof(Season));
     newSeason->name = seasonName;
     newSeason->episodes = NULL;
     newSeason->next = NULL;
 
     // get position to insert at and clear input buffer
-    int position;
+    int position = 0, result = 0;
     printf("Enter the position:\n");
-    scanf(" %d", &position);
-    while (getchar() != '\n');
+    while (!result) {
+        result = scanf(" %d", &position);
+        if (!result) {
+            printf("Invalid input, enter again:\n");
+        }
+        while (getchar() != '\n');
+    }
 
     // insert season at position: at head if position is 0 or list is empty, else traverse to position and insert
     newSeason->next = (*showPtr)->seasons;
@@ -276,7 +308,7 @@ void addEpisode() {
     }
     
     // create new episode with given name and NULL next
-    Episode *tmp, *newEpisode = safeMalloc(sizeof(Episode));
+    Episode *tmp, *newEpisode = (Episode*)safeMalloc(sizeof(Episode));
     newEpisode->name = episodeName;
     newEpisode->next = NULL;
 
@@ -291,10 +323,15 @@ void addEpisode() {
     newEpisode->length = length;
 
     // get position to insert at and clear input buffer
-    int position;
+    int position = 0, result = 0;
     printf("Enter the position:\n");
-    scanf(" %d", &position);
-    while (getchar() != '\n'); 
+    while (!result) {
+        result = scanf(" %d", &position);
+        if (!result) {
+            printf("Invalid input, enter again:\n");
+        }
+        while (getchar() != '\n'); 
+    }
 
     // insert episode at position: at head if position is 0 or list is empty, else traverse to position and insert
     newEpisode->next = (*seasonPtr)->episodes;
@@ -678,9 +715,9 @@ void shrinkDB() {
     // free last row and column
     free(database[dbSize]);
     database[dbSize] = NULL;
-    database = safeRealloc(database, (unsigned)dbSize * sizeof(TVShow**));
+    database = (TVShow***)safeRealloc(database, (unsigned)dbSize * sizeof(TVShow**));
     for (int r = 0; r < dbSize; ++r) {
-        database[r] = safeRealloc(database[r], (unsigned)dbSize * sizeof(TVShow*));
+        database[r] = (TVShow**)safeRealloc(database[r], (unsigned)dbSize * sizeof(TVShow*));
     }
 }
 
@@ -734,12 +771,12 @@ void expandDB() {
     ++dbSize;
     
     // allocate new row and column and NULLify them.
-    database = safeRealloc(database, (unsigned)dbSize * sizeof(TVShow**));
+    database = (TVShow***)safeRealloc(database, (unsigned)dbSize * sizeof(TVShow**));
     for (int r = 0; r < dbSize - 1; ++r) {
-        database[r] = safeRealloc(database[r], (unsigned)dbSize * sizeof(TVShow*));
+        database[r] = (TVShow**)safeRealloc(database[r], (unsigned)dbSize * sizeof(TVShow*));
         database[r][dbSize - 1] = NULL;
     }
-    database[dbSize - 1] = safeMalloc((unsigned)dbSize * sizeof(TVShow*));
+    database[dbSize - 1] = (TVShow**)safeMalloc((unsigned)dbSize * sizeof(TVShow*));
     for (int c = 0; c < dbSize; ++c) {
         database[dbSize - 1][c] = NULL;
     }
@@ -791,12 +828,12 @@ int countShows() {
 void checkInitDB() {
     // database[0][0] availability is crucial for other functions, so initialize database to size 1x1
     if (database == NULL) {
-        database = safeMalloc(sizeof(TVShow**));
+        database = (TVShow***)safeMalloc(sizeof(TVShow**));
         database[0] = NULL;
     }
 
     if (database[0] == NULL) {
-        database[0] = safeMalloc(sizeof(TVShow*));
+        database[0] = (TVShow**)safeMalloc(sizeof(TVShow*));
         database[0][0] = NULL;
         dbSize = 1;
     }
@@ -906,7 +943,7 @@ Episode **findEpisode(Season *season, char *name) {
 char *getString() {
     // dynamically read string from stdin until newline
     size_t currentLen = 0, capacity = BASE_STR_LEN;
-    char *str = safeMalloc(capacity * sizeof(char)), newChar ;
+    char *str = (char*)safeMalloc(capacity * sizeof(char)), newChar ;
     
     // read characters until newline and append to str
     newChar = safeGetChar();
@@ -917,7 +954,7 @@ char *getString() {
         // check if need to expand str
         if (currentLen >= capacity) {
             capacity *= 2;
-            str = safeRealloc(str, capacity * sizeof(char));
+            str = (char*)safeRealloc(str, capacity * sizeof(char));
         }
         newChar = safeGetChar();
     } 
